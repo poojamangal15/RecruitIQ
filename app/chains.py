@@ -56,5 +56,25 @@ class Chain:
         res = chain_email.invoke({"job_description": str(job), "link_list": links})
         return res.content
 
+    def write_cover_letter(self, resume: str, job_description: str) -> str:
+        prompt_cover = PromptTemplate.from_template(
+            """
+            ### RESUME:
+            {resume}
+
+            ### JOB DESCRIPTION:
+            {job_description}
+
+            ### INSTRUCTION:
+            Using the resume and job description provided above, write a professional cover letter highlighting the most relevant experience and skills that match the job requirements.
+            The cover letter should be concise and tailored to the position.
+            Do not include any preamble or closing unrelated to the letter itself.
+            ### COVER LETTER:
+            """
+        )
+        chain_cover = prompt_cover | self.llm
+        res = chain_cover.invoke({"resume": resume, "job_description": job_description})
+        return res.content
+
 if __name__ == "__main__":
     print(os.getenv("GROQ_API_KEY"))

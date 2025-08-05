@@ -4,6 +4,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.exceptions import OutputParserException
 from dotenv import load_dotenv
+from typing import Dict, List
 
 load_dotenv()
 
@@ -54,6 +55,31 @@ class Chain:
         )
         chain_email = prompt_email | self.llm
         res = chain_email.invoke({"job_description": str(job), "link_list": links})
+        return res.content
+
+    def write_cover_letter(self, resume_info: Dict[str, List[str]], job_description: str) -> str:
+        resume_summary = (
+            f"Skills: {', '.join(resume_info.get('skills', []))}\n"
+            f"Education: {'; '.join(resume_info.get('education', []))}\n"
+            f"Experience: {'; '.join(resume_info.get('experience', []))}"
+        )
+        prompt_cover = PromptTemplate.from_template(
+            """
+            ### RESUME INFORMATION:
+            {resume_summary}
+
+            ### JOB DESCRIPTION:
+            {job_description}
+
+            ### INSTRUCTION:
+            Using the resume information and job description above, write a professional cover letter highlighting how the candidate's experience and education align with the role.
+            The cover letter should be concise and tailored to the position.
+            Do not include any preamble or closing unrelated to the letter itself.
+            ### COVER LETTER:
+            """
+        )
+        chain_cover = prompt_cover | self.llm
+        res = chain_cover.invoke({"resume_summary": resume_summary, "job_description": job_description})
         return res.content
 
 if __name__ == "__main__":

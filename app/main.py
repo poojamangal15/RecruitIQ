@@ -14,12 +14,18 @@ from utils import (
 
 
 def create_streamlit_app(llm: Chain, clean_text_fn):
-    st.title("📄 Cover Letter Generator")
+    st.title("📄 Cover Letter and Interview Q&A Generator")
 
     resume_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
     job_input = st.text_area("Job Description or URL")
 
-    if st.button("Generate Cover Letter"):
+    col1, col2 = st.columns(2)
+    with col1:
+        generate_cover_letter = st.button("Generate Cover Letter")
+    with col2:
+        generate_qa = st.button("Generate Interview Q&A")
+
+    if generate_cover_letter or generate_qa:
         if not resume_file or not job_input:
             st.error("Please provide both a resume and a job description or URL.")
             return
@@ -31,26 +37,31 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
             resume_info = extract_structured_info(resume_text)
             job_description = load_job_description(job_input)
 
-            job_skills = extract_job_skills(job_description)
-            skill_map = map_skills(resume_info["skills"], job_skills)
-            score, breakdown = compute_skill_match_score(resume_text, job_skills)
+            if generate_cover_letter:
+                job_skills = extract_job_skills(job_description)
+                skill_map = map_skills(resume_info["skills"], job_skills)
+                score, breakdown = compute_skill_match_score(resume_text, job_skills)
 
-            cover_letter = llm.write_cover_letter(resume_info, job_description)
-            st.code(cover_letter, language="markdown")
+                cover_letter = llm.write_cover_letter(resume_info, job_description)
+                st.code(cover_letter, language="markdown")
 
-            st.subheader("Skill Match Analysis")
-            st.metric("Overall Score", f"{score * 100:.1f}%")
-            if breakdown:
-                chart_df = pd.DataFrame({
-                    "Skill": list(breakdown.keys()),
-                    "Relevance": [v * 100 for v in breakdown.values()],
-                }).set_index("Skill")
-                st.bar_chart(chart_df)
+                st.subheader("Skill Match Analysis")
+                st.metric("Overall Score", f"{score * 100:.1f}%")
+                if breakdown:
+                    chart_df = pd.DataFrame({
+                        "Skill": list(breakdown.keys()),
+                        "Relevance": [v * 100 for v in breakdown.values()],
+                    }).set_index("Skill")
+                    st.bar_chart(chart_df)
 
-            if skill_map["matched"]:
-                st.info("Matched skills: " + ", ".join(skill_map["matched"]))
-            if skill_map["gaps"]:
-                st.warning("Skill gaps: " + ", ".join(skill_map["gaps"]))
+                if skill_map["matched"]:
+                    st.info("Matched skills: " + ", ".join(skill_map["matched"]))
+                if skill_map["gaps"]:
+                    st.warning("Skill gaps: " + ", ".join(skill_map["gaps"]))
+
+            else:
+                qa_pairs = llm.generate_interview_qa(resume_info, job_description)
+                st.code(qa_pairs, language="markdown")
 
         except Exception as e:
             st.error(f"An Error Occurred: {e}")
@@ -58,6 +69,8 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
 
 if __name__ == "__main__":
     chain = Chain()
-    st.set_page_config(layout="wide", page_title="Cover Letter Generator", page_icon="📄")
+    st.set_page_config(
+        layout="wide", page_title="Cover Letter and Interview Q&A Generator", page_icon="📄"
+    )
     create_streamlit_app(chain, clean_text)
 

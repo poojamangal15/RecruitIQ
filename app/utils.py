@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 import requests
 import spacy
 from bs4 import BeautifulSoup
+
 from spacy.matcher import PhraseMatcher
 
 
@@ -45,7 +46,6 @@ def load_job_description(job_input: str) -> str:
         text = soup.get_text(separator=" ")
         return clean_text(text)
     return job_input
-
 
 _SKILLS = [
     "python",

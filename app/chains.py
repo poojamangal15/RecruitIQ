@@ -73,6 +73,7 @@ class Chain:
 
             ### INSTRUCTION:
             Using the resume information and job description above, write a professional cover letter highlighting the most relevant experience and skills that match the job requirements.
+
             The cover letter should be concise and tailored to the position.
             Do not include any preamble or closing unrelated to the letter itself.
             ### COVER LETTER:
@@ -80,6 +81,7 @@ class Chain:
         )
         chain_cover = prompt_cover | self.llm
         res = chain_cover.invoke({"resume_summary": resume_summary, "job_description": job_description})
+
         return res.content
 
 if __name__ == "__main__":

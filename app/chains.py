@@ -68,11 +68,13 @@ class Chain:
             ### RESUME INFORMATION:
             {resume_summary}
 
+
             ### JOB DESCRIPTION:
             {job_description}
 
             ### INSTRUCTION:
             Using the resume information and job description above, write a professional cover letter highlighting how the candidate's experience and education align with the role.
+
             The cover letter should be concise and tailored to the position.
             Do not include any preamble or closing unrelated to the letter itself.
             ### COVER LETTER:
@@ -80,6 +82,7 @@ class Chain:
         )
         chain_cover = prompt_cover | self.llm
         res = chain_cover.invoke({"resume_summary": resume_summary, "job_description": job_description})
+
         return res.content
 
 if __name__ == "__main__":

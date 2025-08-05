@@ -34,6 +34,7 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
                 st.info("Matched skills: " + ", ".join(skill_map["matched"]))
             if skill_map["gaps"]:
                 st.warning("Skill gaps: " + ", ".join(skill_map["gaps"]))
+
         except Exception as e:
             st.error(f"An Error Occurred: {e}")
 

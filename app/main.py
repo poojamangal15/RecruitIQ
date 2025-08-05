@@ -2,7 +2,12 @@ import streamlit as st
 from pypdf import PdfReader
 
 from chains import Chain
-from utils import clean_text
+from utils import (
+    clean_text,
+    extract_job_skills,
+    extract_structured_info,
+    map_skills,
+)
 
 
 def create_streamlit_app(llm: Chain, clean_text_fn):
@@ -20,8 +25,16 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
             pdf_reader = PdfReader(resume_file)
             resume_text = "".join(page.extract_text() or "" for page in pdf_reader.pages)
             resume_text = clean_text_fn(resume_text)
-            cover_letter = llm.write_cover_letter(resume_text, job_description)
+            resume_info = extract_structured_info(resume_text)
+            job_skills = extract_job_skills(job_description)
+            skill_map = map_skills(resume_info["skills"], job_skills)
+            cover_letter = llm.write_cover_letter(resume_info, job_description)
             st.code(cover_letter, language="markdown")
+            if skill_map["matched"]:
+                st.info("Matched skills: " + ", ".join(skill_map["matched"]))
+            if skill_map["gaps"]:
+                st.warning("Skill gaps: " + ", ".join(skill_map["gaps"]))
+
         except Exception as e:
             st.error(f"An Error Occurred: {e}")
 

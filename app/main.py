@@ -6,6 +6,7 @@ from utils import (
     clean_text,
     extract_job_skills,
     extract_structured_info,
+    load_job_description,
     map_skills,
 )
 
@@ -14,11 +15,11 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
     st.title("📄 Cover Letter Generator")
 
     resume_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
-    job_description = st.text_area("Job Description")
+    job_input = st.text_area("Job Description or URL")
 
     if st.button("Generate Cover Letter"):
-        if not resume_file or not job_description:
-            st.error("Please provide both a resume and a job description.")
+        if not resume_file or not job_input:
+            st.error("Please provide both a resume and a job description or URL.")
             return
 
         try:
@@ -26,6 +27,8 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
             resume_text = "".join(page.extract_text() or "" for page in pdf_reader.pages)
             resume_text = clean_text_fn(resume_text)
             resume_info = extract_structured_info(resume_text)
+            job_description = load_job_description(job_input)
+
             job_skills = extract_job_skills(job_description)
             skill_map = map_skills(resume_info["skills"], job_skills)
             cover_letter = llm.write_cover_letter(resume_info, job_description)

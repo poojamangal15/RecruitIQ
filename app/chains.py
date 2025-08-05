@@ -68,12 +68,11 @@ class Chain:
             ### RESUME INFORMATION:
             {resume_summary}
 
-
             ### JOB DESCRIPTION:
             {job_description}
 
             ### INSTRUCTION:
-            Using the resume information and job description above, write a professional cover letter highlighting how the candidate's experience and education align with the role.
+            Using the resume information and job description above, write a professional cover letter highlighting the most relevant experience and skills that match the job requirements.
 
             The cover letter should be concise and tailored to the position.
             Do not include any preamble or closing unrelated to the letter itself.

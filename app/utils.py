@@ -1,7 +1,11 @@
 import re
 from typing import Dict, List
+from urllib.parse import urlparse
 
+import requests
 import spacy
+from bs4 import BeautifulSoup
+
 from spacy.matcher import PhraseMatcher
 
 
@@ -31,6 +35,17 @@ def clean_text(text: str) -> str:
 
     return text
 
+
+def load_job_description(job_input: str) -> str:
+    """Return job description text, fetching it if ``job_input`` is a URL."""
+    parsed = urlparse(job_input.strip())
+    if parsed.scheme in {"http", "https"} and parsed.netloc:
+        resp = requests.get(job_input)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        text = soup.get_text(separator=" ")
+        return clean_text(text)
+    return job_input
 
 _SKILLS = [
     "python",

@@ -1,5 +1,6 @@
 import streamlit as st
 from pypdf import PdfReader
+import pandas as pd
 
 from chains import Chain
 from utils import (
@@ -8,6 +9,7 @@ from utils import (
     extract_structured_info,
     load_job_description,
     map_skills,
+    compute_skill_match_score,
 )
 
 
@@ -31,8 +33,20 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
 
             job_skills = extract_job_skills(job_description)
             skill_map = map_skills(resume_info["skills"], job_skills)
+            score, breakdown = compute_skill_match_score(resume_text, job_skills)
+
             cover_letter = llm.write_cover_letter(resume_info, job_description)
             st.code(cover_letter, language="markdown")
+
+            st.subheader("Skill Match Analysis")
+            st.metric("Overall Score", f"{score * 100:.1f}%")
+            if breakdown:
+                chart_df = pd.DataFrame({
+                    "Skill": list(breakdown.keys()),
+                    "Relevance": [v * 100 for v in breakdown.values()],
+                }).set_index("Skill")
+                st.bar_chart(chart_df)
+
             if skill_map["matched"]:
                 st.info("Matched skills: " + ", ".join(skill_map["matched"]))
             if skill_map["gaps"]:

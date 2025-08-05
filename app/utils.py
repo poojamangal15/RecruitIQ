@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -100,3 +100,17 @@ def map_skills(resume_skills: List[str], job_skills: List[str]) -> Dict[str, Lis
     matched = sorted(job_set & resume_set)
     gaps = sorted(job_set - resume_set)
     return {"matched": matched, "gaps": gaps}
+
+
+def compute_skill_match_score(resume_text: str, job_skills: List[str]) -> Tuple[float, Dict[str, float]]:
+    """Compute overall and per-skill relevance scores.
+
+    The resume text is compared against each job skill using spaCy's vector
+    representations. A value closer to 1 indicates a stronger match. The
+    overall score is the average of individual skill scores.
+    """
+
+    doc_resume = nlp(resume_text)
+    breakdown = {skill: nlp(skill).similarity(doc_resume) for skill in job_skills}
+    score = sum(breakdown.values()) / len(breakdown) if breakdown else 0.0
+    return score, breakdown

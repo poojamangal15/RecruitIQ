@@ -57,7 +57,9 @@ class Chain:
         res = chain_email.invoke({"job_description": str(job), "link_list": links})
         return res.content
 
-    def write_cover_letter(self, resume_info: Dict[str, List[str]], job_description: str) -> str:
+    def write_cover_letter(
+        self, resume_info: Dict[str, List[str]], job_description: str, style: str = "standard"
+    ) -> str:
         resume_summary = (
             f"Skills: {', '.join(resume_info.get('skills', []))}\n"
             f"Education: {'; '.join(resume_info.get('education', []))}\n"
@@ -72,15 +74,79 @@ class Chain:
             {job_description}
 
             ### INSTRUCTION:
-            Using the resume information and job description above, write a professional cover letter highlighting the most relevant experience and skills that match the job requirements.
+            Using the resume information and job description above, write a {style} professional cover letter highlighting the most relevant experience and skills that match the job requirements.
 
-            The cover letter should be concise and tailored to the position.
-            Do not include any preamble or closing unrelated to the letter itself.
+            Tailor the letter to the position and avoid any preamble or closing unrelated to the letter itself.
             ### COVER LETTER:
             """
         )
         chain_cover = prompt_cover | self.llm
-        res = chain_cover.invoke({"resume_summary": resume_summary, "job_description": job_description})
+        res = chain_cover.invoke(
+            {
+                "resume_summary": resume_summary,
+                "job_description": job_description,
+                "style": style,
+            }
+        )
+
+        return res.content
+
+    def refine_cover_letter(self, cover_letter: str, instructions: str) -> str:
+        """Refine a cover letter based on user-provided instructions."""
+        prompt_refine = PromptTemplate.from_template(
+            """
+            ### CURRENT COVER LETTER:
+            {cover_letter}
+
+            ### INSTRUCTION:
+            {instructions}
+
+            Rewrite the cover letter accordingly while preserving key information.
+            ### REVISED COVER LETTER:
+            """
+        )
+        chain_refine = prompt_refine | self.llm
+        res = chain_refine.invoke(
+            {"cover_letter": cover_letter, "instructions": instructions}
+        )
+        return res.content
+
+    def generate_interview_qa(
+        self, resume_info: Dict[str, List[str]], job_description: str, num_questions: int = 5
+    ) -> str:
+        """Generate interview questions and answers based on the resume and job description."""
+        resume_summary = (
+            f"Skills: {', '.join(resume_info.get('skills', []))}\n"
+            f"Education: {'; '.join(resume_info.get('education', []))}\n"
+            f"Experience: {'; '.join(resume_info.get('experience', []))}"
+        )
+
+        prompt_qa = PromptTemplate.from_template(
+            """
+            ### RESUME INFORMATION:
+            {resume_summary}
+
+            ### JOB DESCRIPTION:
+            {job_description}
+
+            ### INSTRUCTION:
+            Generate {num_questions} potential interview questions for this role. For each question, craft a concise answer using details from the resume information above.
+            Format the result as numbered list in Markdown:
+
+            1. **Question:** ...\n   **Answer:** ...
+
+            Do not include any preamble or text outside the list.
+            ### INTERVIEW Q&A:
+            """
+        )
+        chain_qa = prompt_qa | self.llm
+        res = chain_qa.invoke(
+            {
+                "resume_summary": resume_summary,
+                "job_description": job_description,
+                "num_questions": num_questions,
+            }
+        )
 
         return res.content
 

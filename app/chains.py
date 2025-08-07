@@ -150,5 +150,44 @@ class Chain:
 
         return res.content
 
+    def generate_interview_qa(
+        self, resume_info: Dict[str, List[str]], job_description: str, num_questions: int = 5
+    ) -> str:
+        """Generate interview questions and answers based on the resume and job description."""
+        resume_summary = (
+            f"Skills: {', '.join(resume_info.get('skills', []))}\n"
+            f"Education: {'; '.join(resume_info.get('education', []))}\n"
+            f"Experience: {'; '.join(resume_info.get('experience', []))}"
+        )
+
+        prompt_qa = PromptTemplate.from_template(
+            """
+            ### RESUME INFORMATION:
+            {resume_summary}
+
+            ### JOB DESCRIPTION:
+            {job_description}
+
+            ### INSTRUCTION:
+            Generate {num_questions} potential interview questions for this role. For each question, craft a concise answer using details from the resume information above.
+            Format the result as numbered list in Markdown:
+
+            1. **Question:** ...\n   **Answer:** ...
+
+            Do not include any preamble or text outside the list.
+            ### INTERVIEW Q&A:
+            """
+        )
+        chain_qa = prompt_qa | self.llm
+        res = chain_qa.invoke(
+            {
+                "resume_summary": resume_summary,
+                "job_description": job_description,
+                "num_questions": num_questions,
+            }
+        )
+
+        return res.content
+
 if __name__ == "__main__":
     print(os.getenv("GROQ_API_KEY"))

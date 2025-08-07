@@ -90,16 +90,20 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
             st.text_area("Detailed Cover Letter", key="detailed_text", height=300)
 
         st.subheader("Refine Cover Letter")
-        version_to_refine = st.selectbox(
+        st.selectbox(
             "Version to refine", ["Concise", "Detailed"], key="version_select"
         )
-        tone = st.selectbox(
+        st.selectbox(
             "Tone", ["Default", "Formal", "Friendly", "Confident"], key="tone_select"
         )
-        instructions = st.text_input(
+        st.text_input(
             "Additional instructions (optional)", key="refine_instruction"
         )
-        if st.button("Apply Refinement"):
+
+        def apply_refinement():
+            version_to_refine = st.session_state.version_select
+            tone = st.session_state.tone_select
+            instructions = st.session_state.refine_instruction
             refine_instructions = (
                 f"Rewrite in a {tone.lower()} tone. " if tone != "Default" else ""
             )
@@ -111,21 +115,22 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
                 st.session_state[target_key] = llm.refine_cover_letter(
                     st.session_state[target_key], refine_instructions
                 )
-            else:
-                st.warning(
-                    "Please provide refinement instructions or select a tone."
-                )
+
+        st.button("Apply Refinement", on_click=apply_refinement)
 
         final_choice = st.radio(
             "Select final version", ["Concise", "Detailed"], key="final_choice"
         )
-        if st.button("Finalize Cover Letter"):
-            final_letter = (
+
+        def finalize_cover_letter():
+            choice = st.session_state.final_choice
+            st.session_state["final_letter"] = (
                 st.session_state.concise_text
-                if final_choice == "Concise"
+                if choice == "Concise"
                 else st.session_state.detailed_text
             )
-            st.session_state["final_letter"] = final_letter
+
+        st.button("Finalize Cover Letter", on_click=finalize_cover_letter)
         if st.session_state.get("final_letter"):
             st.subheader("Final Cover Letter")
             st.code(st.session_state.final_letter, language="markdown")

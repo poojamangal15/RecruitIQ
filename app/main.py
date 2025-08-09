@@ -100,7 +100,6 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
             "Additional instructions (optional)", key="refine_instruction"
         )
 
-
         def apply_refinement():
             version_to_refine = st.session_state.version_select
             tone = st.session_state.tone_select
@@ -169,7 +168,6 @@ if __name__ == "__main__":
         layout="wide",
         page_title="Cover Letter and Interview Q&A Generator",
         page_icon="📄",
-
     )
     create_streamlit_app(chain, clean_text)
 

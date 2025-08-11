@@ -5,6 +5,8 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.exceptions import OutputParserException
 from dotenv import load_dotenv
 from typing import Dict, List
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 
 load_dotenv()
 
@@ -149,6 +151,40 @@ class Chain:
         )
 
         return res.content
+
+    def interactive_interview(
+        self, resume_info: Dict[str, List[str]], job_description: str
+    ) -> ConversationChain:
+        """Create a conversation chain for interactive interview practice."""
+        resume_summary = (
+            f"Skills: {', '.join(resume_info.get('skills', []))}\n"
+            f"Education: {'; '.join(resume_info.get('education', []))}\n"
+            f"Experience: {'; '.join(resume_info.get('experience', []))}"
+        )
+        template = (
+            """
+            You are an AI interviewer helping a candidate prepare for an interview.
+            Use the resume and job description to guide the conversation.
+            Ask one question at a time. After the candidate answers, provide brief
+            constructive feedback and then ask the next question.
+
+            Resume:
+            {resume_summary}
+
+            Job Description:
+            {job_description}
+
+            Current conversation:
+            {history}
+            Candidate: {input}
+            Interviewer:
+            """
+        )
+        prompt = PromptTemplate.from_template(template).partial(
+            resume_summary=resume_summary, job_description=job_description
+        )
+        memory = ConversationBufferMemory(return_messages=True)
+        return ConversationChain(llm=self.llm, prompt=prompt, memory=memory)
 
 if __name__ == "__main__":
     print(os.getenv("GROQ_API_KEY"))

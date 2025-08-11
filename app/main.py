@@ -16,6 +16,11 @@ from utils import (
 def create_streamlit_app(llm: Chain, clean_text_fn):
     st.title("📄 Cover Letter and Interview Q&A Generator")
 
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    if "interview_chain" not in st.session_state:
+        st.session_state.interview_chain = None
+
     resume_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
     job_input = st.text_area("Job Description or URL")
 
@@ -75,6 +80,31 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
                     qa_pairs = llm.generate_interview_qa(resume_info, job_description)
                     st.session_state.update(
                         {"qa_pairs": qa_pairs, "qa_generated": True}
+                    )
+                except Exception as e:
+                    st.error(f"An Error Occurred: {e}")
+
+        if st.button("Start Interactive Interview"):
+            if not resume_file or not job_input:
+                st.error("Please provide both a resume and a job description or URL.")
+            else:
+                try:
+                    pdf_reader = PdfReader(resume_file)
+                    resume_text = "".join(
+                        page.extract_text() or "" for page in pdf_reader.pages
+                    )
+                    resume_text = clean_text_fn(resume_text)
+                    resume_info = extract_structured_info(resume_text)
+                    job_description = load_job_description(job_input)
+                    st.session_state.interview_chain = llm.interactive_interview(
+                        resume_info, job_description
+                    )
+                    st.session_state.chat_history = []
+                    first_question = st.session_state.interview_chain.predict(
+                        input="Start the interview."
+                    )
+                    st.session_state.chat_history.append(
+                        {"role": "assistant", "content": first_question}
                     )
                 except Exception as e:
                     st.error(f"An Error Occurred: {e}")
@@ -160,6 +190,25 @@ def create_streamlit_app(llm: Chain, clean_text_fn):
     if st.session_state.get("qa_generated"):
         st.subheader("Interview Q&A")
         st.code(st.session_state.qa_pairs, language="markdown")
+
+    if st.session_state.interview_chain:
+        st.subheader("Interactive Interview")
+        for msg in st.session_state.chat_history:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        def handle_user_input():
+            user_msg = st.session_state.user_input
+            st.session_state.chat_history.append(
+                {"role": "user", "content": user_msg}
+            )
+            ai_msg = st.session_state.interview_chain.predict(input=user_msg)
+            st.session_state.chat_history.append(
+                {"role": "assistant", "content": ai_msg}
+            )
+            st.session_state.user_input = ""
+
+        st.text_input("Your answer", key="user_input", on_change=handle_user_input)
 
 
 if __name__ == "__main__":

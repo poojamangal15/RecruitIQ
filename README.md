@@ -9,7 +9,11 @@ RecruitIQ is a Streamlit application that helps candidates craft tailored cover 
 - **Interview Q&A Generator**: Produce potential interview questions with suggested answers based on the resume and job description.
 - **Skill Match Analysis**: Visualize how your skills align with the job requirements and identify gaps.
 
-## Usage
+## Live App
+
+You can try RecruitIQ here: [Streamlit](https://recruitiqgit.streamlit.app/)
+
+## Usage (local)
 
 1. Install dependencies:
    ```bash
